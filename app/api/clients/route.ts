@@ -1,68 +1,53 @@
-import { NextRequest } from "next/server";
-import { withAuth, AuthenticatedRequest } from "@/lib/middleware/auth";
-import { withValidation, createClientSchema, paginationSchema, serverError } from "@/lib/middleware/validation";
-import { createClient, getClientsByUserId } from "@/lib/database/services";
-import { createActivity } from "@/lib/database/services";
+import { NextRequest, NextResponse } from 'next/server';
 
-async function handleCreateClient(req: AuthenticatedRequest, data: any) {
+export async function GET(req: NextRequest) {
   try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return Response.json({ success: false, error: "User not authenticated" }, { status: 401 });
-    }
-
-    const client = await createClient({
-      ...data,
-      userId,
-      isActive: true
-    });
-
-    // Log activity
-    await createActivity({
-      type: 'client',
-      action: 'create',
-      description: `Created client: ${client.name}`,
-      userId,
-      clientId: client.id
-    });
-
-    return Response.json({ success: true, data: client });
-  } catch (error) {
-    console.error("Create client error:", error);
-    return serverError("Failed to create client");
-  }
-}
-
-async function handleGetClients(req: AuthenticatedRequest, data: any) {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return Response.json({ success: false, error: "User not authenticated" }, { status: 401 });
-    }
-
-    const { clients, total } = await getClientsByUserId(userId, data);
-
-    return Response.json({
-      success: true,
-      data: clients,
-      pagination: {
-        page: data.page,
-        limit: data.limit,
-        total,
-        totalPages: Math.ceil(total / data.limit)
+    // Return mock clients data for now
+    const clients = [
+      {
+        id: '1',
+        name: 'John Doe',
+        email: 'john@example.com',
+        phone: '+91 9876543210',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        name: 'Jane Smith', 
+        email: 'jane@example.com',
+        phone: '+91 9876543211',
+        createdAt: new Date().toISOString()
       }
-    });
+    ];
+
+    return NextResponse.json({ clients });
   } catch (error) {
-    console.error("Get clients error:", error);
-    return serverError("Failed to fetch clients");
+    return NextResponse.json(
+      { error: 'Failed to fetch clients' },
+      { status: 500 }
+    );
   }
 }
 
-export const POST = withAuth(
-  withValidation(createClientSchema)(handleCreateClient)
-);
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { name, email, phone } = body;
 
-export const GET = withAuth(
-  withValidation(paginationSchema)(handleGetClients)
-);
+    // Mock client creation
+    const newClient = {
+      id: Math.random().toString(36).substr(2, 9),
+      name,
+      email,
+      phone,
+      createdAt: new Date().toISOString()
+    };
 
+    return NextResponse.json({ client: newClient }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to create client' },
+      { status: 500 }
+    );
+  }
+}
