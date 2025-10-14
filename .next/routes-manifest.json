@@ -33,6 +33,12 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/case",
+      "regex": "^/case(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/case(?:/)?$"
+    },
+    {
       "page": "/favicon.ico",
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},
@@ -43,6 +49,12 @@
       "regex": "^/history(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/history(?:/)?$"
+    },
+    {
+      "page": "/property",
+      "regex": "^/property(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/property(?:/)?$"
     },
     {
       "page": "/research",
