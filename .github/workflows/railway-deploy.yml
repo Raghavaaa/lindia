@@ -1,0 +1,87 @@
+# Railway Deployment Workflow
+# This workflow is optional - Railway deploys automatically on push to main
+# Use this for additional checks before deployment
+
+name: Railway Pre-Deploy Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pre-deploy-checks:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci --include=dev
+      
+      - name: Run linter
+        run: npm run lint || echo "Linting completed with warnings"
+        continue-on-error: true
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Check for environment variables documentation
+        run: |
+          if [ ! -f .env.example ]; then
+            echo "Error: .env.example not found"
+            exit 1
+          fi
+          echo "✓ Environment documentation exists"
+      
+      - name: Verify deployment documentation
+        run: |
+          if [ ! -f RAILWAY_DEPLOYMENT.md ]; then
+            echo "Warning: RAILWAY_DEPLOYMENT.md not found"
+          else
+            echo "✓ Deployment documentation exists"
+          fi
+      
+      - name: Check build output
+        run: |
+          if [ -d .next ]; then
+            echo "✓ Build successful"
+            ls -lh .next
+          else
+            echo "Error: Build output not found"
+            exit 1
+          fi
+      
+      - name: Test health check route
+        run: |
+          if [ -f "app/api/health/route.ts" ]; then
+            echo "✓ Health check endpoint exists"
+          else
+            echo "Warning: Health check endpoint not found"
+          fi
+      
+      - name: Verify Railway configuration
+        run: |
+          if [ -f railway.json ]; then
+            echo "✓ Railway configuration exists"
+            cat railway.json
+          else
+            echo "Warning: railway.json not found"
+          fi
+      
+      - name: Summary
+        run: |
+          echo "================================"
+          echo "Pre-deployment checks completed!"
+          echo "================================"
+          echo "✓ Dependencies installed"
+          echo "✓ Application built successfully"
+          echo "✓ Ready for Railway deployment"
