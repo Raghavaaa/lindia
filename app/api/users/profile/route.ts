@@ -1,65 +1,42 @@
-import { NextRequest } from "next/server";
-import { withAuth, AuthenticatedRequest } from "@/lib/middleware/auth";
-import { withValidation, updateUserSchema, serverError } from "@/lib/middleware/validation";
-import { getUserById, updateUser } from "@/lib/database/services";
-import { createActivity } from "@/lib/database/services";
+import { NextRequest, NextResponse } from 'next/server';
 
-async function handleGetProfile(req: AuthenticatedRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return Response.json({ success: false, error: "User not authenticated" }, { status: 401 });
-    }
+    // Mock user profile data
+    const profile = {
+      id: '1',
+      name: 'Demo User',
+      email: 'demo@example.com',
+      phone: '+91 9876543210',
+      role: 'lawyer',
+      createdAt: new Date().toISOString()
+    };
 
-    const user = await getUserById(userId);
-    if (!user) {
-      return Response.json({ success: false, error: "User not found" }, { status: 404 });
-    }
-
-    // Remove sensitive data
-    const { password, ...userProfile } = user;
-
-    return Response.json({ success: true, data: userProfile });
+    return NextResponse.json({ profile });
   } catch (error) {
-    console.error("Get profile error:", error);
-    return serverError("Failed to fetch profile");
+    return NextResponse.json(
+      { error: 'Failed to fetch profile' },
+      { status: 500 }
+    );
   }
 }
 
-async function handleUpdateProfile(req: AuthenticatedRequest, data: any) {
+export async function PUT(req: NextRequest) {
   try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return Response.json({ success: false, error: "User not authenticated" }, { status: 401 });
-    }
+    const body = await req.json();
 
-    const updatedUser = await updateUser(userId, data);
-    
-    if (!updatedUser) {
-      return serverError("Failed to update profile");
-    }
+    // Mock profile update
+    const updatedProfile = {
+      id: '1',
+      ...body,
+      updatedAt: new Date().toISOString()
+    };
 
-    // Log activity
-    await createActivity({
-      type: 'user',
-      action: 'update_profile',
-      description: "Updated user profile",
-      userId
-    });
-
-    // Remove sensitive data
-    const { password, ...userProfile } = updatedUser;
-
-    return Response.json({ success: true, data: userProfile });
+    return NextResponse.json({ profile: updatedProfile });
   } catch (error) {
-    console.error("Update profile error:", error);
-    return serverError("Failed to update profile");
+    return NextResponse.json(
+      { error: 'Failed to update profile' },
+      { status: 500 }
+    );
   }
 }
-
-export const GET = withAuth(handleGetProfile);
-
-export const PUT = withAuth(
-  withValidation(updateUserSchema)(handleUpdateProfile)
-);
-

@@ -1,7 +1,9 @@
 {
-  "/_not-found/page": "/_not-found",
-  "/favicon.ico/route": "/favicon.ico",
-  "/page": "/",
-  "/research/page": "/research",
-  "/history/page": "/history"
+  "/api/cases/route": "/api/cases",
+  "/api/clients/[id]/route": "/api/clients/[id]",
+  "/api/clients/route": "/api/clients",
+  "/api/health/route": "/api/health",
+  "/api/research/route": "/api/research",
+  "/api/users/profile/route": "/api/users/profile",
+  "/api/simple-research/route": "/api/simple-research"
 }

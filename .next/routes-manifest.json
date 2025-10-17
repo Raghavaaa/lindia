@@ -18,39 +18,17 @@
     "afterFiles": [],
     "fallback": []
   },
-  "dynamicRoutes": [],
-  "staticRoutes": [
+  "dynamicRoutes": [
     {
-      "page": "/",
-      "regex": "^/(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/(?:/)?$"
-    },
-    {
-      "page": "/_not-found",
-      "regex": "^/_not\\-found(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/_not\\-found(?:/)?$"
-    },
-    {
-      "page": "/favicon.ico",
-      "regex": "^/favicon\\.ico(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/favicon\\.ico(?:/)?$"
-    },
-    {
-      "page": "/history",
-      "regex": "^/history(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/history(?:/)?$"
-    },
-    {
-      "page": "/research",
-      "regex": "^/research(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/research(?:/)?$"
+      "page": "/api/clients/[id]",
+      "regex": "^/api/clients/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/clients/(?<nxtPid>[^/]+?)(?:/)?$"
     }
   ],
+  "staticRoutes": [],
   "dataRoutes": [],
   "rsc": {
     "header": "rsc",

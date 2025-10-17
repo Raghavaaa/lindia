@@ -55,10 +55,16 @@ src/
 
 ## 🔧 Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_FRONTEND_API_BASE` | Backend API base URL | Yes |
-| `NEXT_PUBLIC_FRONTEND_ENV` | Environment (development/production) | No |
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `DEEPSEEK_API_KEY` | DeepSeek API key for AI research | Yes | - |
+| `NODE_ENV` | Environment mode | Yes | development |
+| `NEXT_PUBLIC_FRONTEND_API_BASE` | Backend API base URL | No | /api |
+| `NEXT_PUBLIC_FRONTEND_ENV` | Frontend environment | No | development |
+| `ADMIN_SECRET` | Admin operations secret | No | - |
+| `PORT` | Server port (auto-set by Railway) | No | 3000 |
+
+See `.env.example` for complete configuration options.
 
 ## 🌐 API Integration
 
@@ -81,18 +87,39 @@ The frontend communicates with the backend via versioned API endpoints:
 
 ### Railway Deployment
 
+For detailed Railway deployment instructions, see **[RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md)**.
+
+**Quick Steps:**
+
 1. Connect your GitHub repository to Railway
-2. Set environment variables in Railway dashboard:
-   - `NEXT_PUBLIC_FRONTEND_API_BASE`: Your backend URL
+2. Set required environment variables:
+   - `DEEPSEEK_API_KEY`: Your DeepSeek API key **(REQUIRED)**
+   - `NODE_ENV`: production
+   - `NEXT_PUBLIC_FRONTEND_API_BASE`: /api
    - `NEXT_PUBLIC_FRONTEND_ENV`: production
 
-3. Railway will automatically build and deploy
+3. Railway automatically builds and deploys
+4. Health check endpoint: `/api/health`
 
 ### Build for Production
 
 ```bash
+# Install dependencies
+npm ci --include=dev
+
+# Build the application
 npm run build
+
+# Start production server
 npm start
+```
+
+### Environment Setup
+
+Copy `.env.example` to `.env.local` and configure:
+
+```bash
+cp .env.example .env.local
 ```
 
 ## 🧪 Development
@@ -149,4 +176,4 @@ npm start
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License.# Railway Deployment Fix

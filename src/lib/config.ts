@@ -1,23 +1,23 @@
 // Global configuration for frontend
 export const config = {
-  apiBase: process.env.NEXT_PUBLIC_FRONTEND_API_BASE || 'http://localhost:3001',
+  apiBase: process.env.NEXT_PUBLIC_FRONTEND_API_BASE || '/api',
   environment: process.env.NEXT_PUBLIC_FRONTEND_ENV || 'development',
   
   // API endpoints
   endpoints: {
-    health: '/api/v1/health',
+    health: '/api/health',
     auth: {
-      google: '/api/v1/auth/google',
-      me: '/api/v1/me',
+      google: '/api/auth/google',
+      me: '/api/me',
     },
-    clients: '/api/v1/clients',
+    clients: '/api/clients',
     research: {
-      run: '/api/v1/research/run',
-      save: '/api/v1/research/save',
-      history: '/api/v1/research/history',
+      run: '/api/simple-research',
+      save: '/api/research',
+      history: '/api/research/saved',
     },
     admin: {
-      prompt: '/api/v1/admin/prompt',
+      prompt: '/api/admin/updatePrompt',
     },
   },
 } as const;
@@ -44,3 +44,4 @@ export const apiFetch = async (
 
   return fetch(url, { ...defaultOptions, ...options });
 };
+

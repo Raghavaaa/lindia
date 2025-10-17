@@ -1,109 +1,32 @@
-import { NextRequest } from "next/server";
-import { getSetting } from "@/lib/db";
-import { createResearchQuery } from "@/lib/database/services";
-import { withValidation, createResearchSchema, serverError } from "@/lib/middleware/validation";
-import { withAuth, AuthenticatedRequest } from "@/lib/middleware/auth";
+import { NextRequest, NextResponse } from 'next/server';
 
-async function callInLegalBert(query: string) {
-  const hfToken = process.env.HF_TOKEN;
-  if (!hfToken) return { text: "", confidence: 0 };
-  
-  try {
-    const res = await fetch("https://api-inference.huggingface.co/models/law-ai/InLegalBERT", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${hfToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        inputs: query,
-        options: { wait_for_model: true }
-      }),
-      cache: "no-store",
-    });
-    
-    if (!res.ok) return { text: "", confidence: 0 };
-    const data = await res.json().catch(() => ({}));
-    
-    // Handle different response formats from HF API
-    let text = "";
-    let confidence = 0;
-    
-    if (Array.isArray(data)) {
-      // Standard HF inference response
-      const firstResult = data[0];
-      if (firstResult && firstResult.label) {
-        text = firstResult.label;
-        confidence = firstResult.score || 0.7;
-      }
-    } else if (data.generated_text) {
-      // Text generation response
-      text = data.generated_text;
-      confidence = 0.8;
-    } else if (data.result) {
-      // Custom response format
-      text = data.result;
-      confidence = 0.7;
-    }
-    
-    return { text, confidence };
-  } catch (error) {
-    console.error("InLegalBERT API error:", error);
-    return { text: "", confidence: 0 };
-  }
+// Logging utility
+function logRequest(method: string, path: string, status: number, duration: number) {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${method} ${path} - ${status} - ${duration}ms`);
 }
 
 async function callDeepSeek(query: string) {
   const key = process.env.DEEPSEEK_API_KEY;
-  if (!key) return "";
-  const res = await fetch("https://api.deepseek.com/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      messages: [
-        { role: "system", content: "You are a legal research assistant for Indian law." },
-        { role: "user", content: query },
-      ],
-      temperature: 0.3,
-    }),
-    cache: "no-store",
-  });
-  if (!res.ok) return "";
-  const data: unknown = await res.json().catch(() => ({}));
-  let text = "";
-  if (
-    typeof data === "object" &&
-    data !== null &&
-    Array.isArray((data as { choices?: unknown }).choices)
-  ) {
-    const choices = (data as { choices: Array<{ message?: { content?: string } }> }).choices;
-    const first = choices[0];
-    if (first && first.message && typeof first.message.content === "string") {
-      text = first.message.content;
-    }
+  
+  if (!key) {
+    console.error('[DeepSeek] API key not configured');
+    throw new Error('DeepSeek API key not configured');
   }
-  return text;
-}
-
-async function handleResearch(req: AuthenticatedRequest, data: any) {
+  
   try {
-    const { query, clientId, save, model } = data;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return new Response(JSON.stringify({ success: false, error: "User not authenticated" }), { 
-        status: 401, 
-        headers: { "Content-Type": "application/json" } 
-      });
-    }
-
-    const envPrompt = process.env.PROMPT_BASE;
-    const storedPrompt = await getSetting("PROMPT_BASE").catch(() => undefined);
-    const basePrompt = (storedPrompt ?? envPrompt ?? `You are an expert Indian legal research assistant. Provide comprehensive, accurate, and practical legal guidance for Indian law. 
+    const res = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          { 
+            role: "system", 
+            content: `You are an expert Indian legal research assistant. Provide comprehensive, accurate, and practical legal guidance for Indian law.
 
 For any legal query, include:
 1. Relevant Indian laws, acts, and sections
@@ -112,53 +35,110 @@ For any legal query, include:
 4. Important considerations and warnings
 5. References to specific legal provisions
 
-Be specific, cite relevant laws, and provide actionable advice. Focus on Indian legal system, courts, and procedures.`).trim();
-    const refined = `${basePrompt}\n\nUser query: ${query}`;
-
-    const primary = await callInLegalBert(refined);
-    let finalText = primary.text?.trim() ?? "";
-    let confidence = primary.confidence;
+Be specific, cite relevant laws, and provide actionable advice. Focus on Indian legal system, courts, and procedures.` 
+          },
+          { role: "user", content: query },
+        ],
+        temperature: 0.3,
+        max_tokens: 4000,
+      }),
+    });
     
-    if (!finalText || primary.confidence < 0.6) {
-      const fallback = await callDeepSeek(refined);
-      if (fallback) {
-        finalText = fallback.trim();
-        confidence = 0.8;
-      }
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`[DeepSeek] API error: ${res.status} - ${errorText}`);
+      throw new Error(`DeepSeek API returned ${res.status}`);
     }
     
-    finalText = finalText.replace(/\n{3,}/g, "\n\n").trim();
-
-    // Save research query
-    const researchQuery = await createResearchQuery({
-      userId,
-      clientId,
-      queryText: query,
-      responseText: finalText,
-      status: 'completed',
-      model: model || 'deepseek',
-      confidence
-    });
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: { 
-        result: finalText, 
-        id: researchQuery.id,
-        confidence 
-      } 
-    }), { 
-      status: 200, 
-      headers: { "Content-Type": "application/json" } 
-    });
+    const data: any = await res.json();
+    
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      return data.choices[0].message.content || "";
+    }
+    
+    console.error('[DeepSeek] Unexpected response format:', data);
+    throw new Error('Unexpected response format from DeepSeek');
+    
   } catch (error) {
-    console.error("/api/research error", error);
-    return serverError("Research failed");
+    console.error("[DeepSeek] Error:", error);
+    throw error;
   }
 }
 
-export const POST = withAuth(
-  withValidation(createResearchSchema)(handleResearch)
-);
+export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+  
+  try {
+    const body = await req.json();
+    const { query, clientName, save } = body;
 
+    // Validation
+    if (!query || typeof query !== 'string') {
+      logRequest('POST', '/api/research', 400, Date.now() - startTime);
+      return NextResponse.json(
+        { error: 'Query is required and must be a string' },
+        { status: 400 }
+      );
+    }
 
+    if (query.trim().length === 0) {
+      logRequest('POST', '/api/research', 400, Date.now() - startTime);
+      return NextResponse.json(
+        { error: 'Query cannot be empty' },
+        { status: 400 }
+      );
+    }
+
+    if (query.length > 5000) {
+      logRequest('POST', '/api/research', 400, Date.now() - startTime);
+      return NextResponse.json(
+        { error: 'Query too long (max 5000 characters)' },
+        { status: 400 }
+      );
+    }
+
+    console.log(`[Research] Processing query (${query.length} chars)${clientName ? ` for client: ${clientName}` : ''}`);
+
+    const result = await callDeepSeek(query.trim());
+    
+    if (!result) {
+      logRequest('POST', '/api/research', 500, Date.now() - startTime);
+      return NextResponse.json(
+        { error: 'Failed to generate response - empty result' },
+        { status: 500 }
+      );
+    }
+
+    // For now, just return the result without saving
+    // TODO: Implement saving functionality when database is set up
+    if (save && clientName) {
+      console.log(`[Research] Would save research for client: ${clientName}`);
+    }
+
+    logRequest('POST', '/api/research', 200, Date.now() - startTime);
+    return NextResponse.json({ 
+      result: result.trim(),
+      timestamp: new Date().toISOString(),
+      metadata: {
+        queryLength: query.length,
+        responseLength: result.length,
+      }
+    });
+    
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('[Research] Error:', error);
+    logRequest('POST', '/api/research', 500, duration);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const isConfigError = errorMessage.includes('not configured');
+    
+    return NextResponse.json(
+      { 
+        error: isConfigError ? 'Service not properly configured' : 'Failed to process request',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
+      { status: 500 }
+    );
+  }
+}
