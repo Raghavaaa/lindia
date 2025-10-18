@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     # AI Engine configuration
     AI_ENGINE_URL: str = "https://ai.legalindia.ai"
     
-    # JWT configuration
-    JWT_SECRET: str
+    # JWT configuration (optional since we use API key auth)
+    JWT_SECRET: Optional[str] = None
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
