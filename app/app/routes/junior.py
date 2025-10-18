@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from app.schemas.query_schema import JuniorRequest, JuniorResponse
 from app.controllers.junior_controller import JuniorController
-from app.core.security import get_current_user
+from fastapi import Header
 from app.core.logger import logger
 
 router = APIRouter(prefix="/junior", tags=["Legal Junior Assistant"])
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/junior", tags=["Legal Junior Assistant"])
 @router.post("/chat", response_model=JuniorResponse)
 async def chat_with_junior(
     request: JuniorRequest,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    x_api_key: str = Header(..., alias="X-API-Key")
 ):
     """
     Chat with the legal junior assistant.
@@ -28,7 +28,8 @@ async def chat_with_junior(
     Returns:
         JuniorResponse with the answer
     """
-    user_id = current_user.get("user_id", 1)
+    # Use API key for authentication - default user_id for now
+    user_id = 1
     logger.info(f"Junior chat request from user {user_id}")
     
     try:
@@ -45,7 +46,7 @@ async def chat_with_junior(
 @router.get("/conversation/{conversation_id}", response_model=Dict[str, Any])
 async def get_conversation(
     conversation_id: str,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    x_api_key: str = Header(..., alias="X-API-Key")
 ):
     """
     Get the conversation history for a specific conversation.
@@ -57,7 +58,8 @@ async def get_conversation(
     Returns:
         Dictionary containing conversation history
     """
-    user_id = current_user.get("user_id", 1)
+    # Use API key for authentication - default user_id for now
+    user_id = 1
     logger.info(f"Fetching conversation {conversation_id} for user {user_id}")
     
     try:

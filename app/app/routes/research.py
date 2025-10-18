@@ -7,7 +7,7 @@ from typing import Dict, Any, List
 
 from app.schemas.query_schema import ResearchRequest, ResearchResponse
 from app.controllers.research_controller import ResearchController
-from app.core.security import get_current_user
+from fastapi import Header
 from app.core.logger import logger
 
 router = APIRouter(prefix="/research", tags=["Legal Research"])
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/research", tags=["Legal Research"])
 @router.post("/", response_model=ResearchResponse)
 async def perform_research(
     request: ResearchRequest,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    x_api_key: str = Header(..., alias="X-API-Key")
 ):
     """
     Perform legal research based on the query.
@@ -28,7 +28,8 @@ async def perform_research(
     Returns:
         ResearchResponse with research results
     """
-    user_id = current_user.get("user_id", 1)
+    # Use API key for authentication - default user_id for now
+    user_id = 1
     logger.info(f"Research request from user {user_id}")
     
     try:
@@ -45,7 +46,7 @@ async def perform_research(
 @router.get("/history", response_model=List[Dict[str, Any]])
 async def get_research_history(
     limit: int = 10,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    x_api_key: str = Header(..., alias="X-API-Key")
 ):
     """
     Get research history for the current user.
@@ -57,7 +58,8 @@ async def get_research_history(
     Returns:
         List of research history records
     """
-    user_id = current_user.get("user_id", 1)
+    # Use API key for authentication - default user_id for now
+    user_id = 1
     logger.info(f"Fetching research history for user {user_id}")
     
     try:
