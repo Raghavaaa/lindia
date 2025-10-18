@@ -12,7 +12,7 @@ export interface LogEntry {
   message: string;
   timestamp: string;
   userId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   error?: Error;
 }
 
@@ -65,7 +65,7 @@ class Logger {
     }
   }
 
-  async error(message: string, error?: Error, userId?: string, metadata?: Record<string, any>): Promise<void> {
+  async error(message: string, error?: Error, userId?: string, metadata?: Record<string, unknown>): Promise<void> {
     await this.log({
       level: LogLevel.ERROR,
       message,
@@ -76,7 +76,7 @@ class Logger {
     });
   }
 
-  async warn(message: string, userId?: string, metadata?: Record<string, any>): Promise<void> {
+  async warn(message: string, userId?: string, metadata?: Record<string, unknown>): Promise<void> {
     await this.log({
       level: LogLevel.WARN,
       message,
@@ -86,7 +86,7 @@ class Logger {
     });
   }
 
-  async info(message: string, userId?: string, metadata?: Record<string, any>): Promise<void> {
+  async info(message: string, userId?: string, metadata?: Record<string, unknown>): Promise<void> {
     await this.log({
       level: LogLevel.INFO,
       message,
@@ -96,7 +96,7 @@ class Logger {
     });
   }
 
-  async debug(message: string, userId?: string, metadata?: Record<string, any>): Promise<void> {
+  async debug(message: string, userId?: string, metadata?: Record<string, unknown>): Promise<void> {
     await this.log({
       level: LogLevel.DEBUG,
       message,
@@ -123,7 +123,7 @@ export function logRequest(req: NextRequest, userId?: string): void {
 }
 
 // Error logging helper
-export function logError(error: Error, context: string, userId?: string, metadata?: Record<string, any>): void {
+export function logError(error: Error, context: string, userId?: string, metadata?: Record<string, unknown>): void {
   logger.error(`Error in ${context}: ${error.message}`, error, userId, {
     ...metadata,
     context,
