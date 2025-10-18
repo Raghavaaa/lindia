@@ -9,9 +9,8 @@ import ResearchModule from "../../components/ResearchModule";
 import PropertyOpinionModule from "../../components/PropertyOpinionModule";
 import CaseModule from "../../components/CaseModule";
 import JuniorModule from "../../components/JuniorModule";
+import { v4 as uuidv4 } from "uuid";
 import { motion } from "framer-motion";
-import { listClients, createClient, type Client as APIClient } from "@/lib/api/client-api";
-import { useToast } from "@/hooks/use-toast";
 
 type Client = {
   id: string;
@@ -31,97 +30,43 @@ type HistoryItem = {
 function AppPageContent() {
   const searchParams = useSearchParams();
   const moduleParam = searchParams?.get("module") || "research";
-  const { toast } = useToast();
   
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [loading, setLoading] = useState(true);
 
-  // Fetch clients from backend API
+  // Load clients from localStorage
   useEffect(() => {
-    async function fetchClients() {
-      try {
-        setLoading(true);
-        const response = await listClients({ is_active: true });
-        
-        // Convert backend format to frontend format
-        const formattedClients: Client[] = response.clients.map((c: APIClient) => ({
-          id: c.client_id,
-          name: c.name,
-          phone: c.phone || undefined,
-        }));
-        
-        setClients(formattedClients);
-      } catch (error) {
-        console.error("Error fetching clients from API:", error);
-        
-        // Fallback to localStorage if API fails (for offline support)
-        try {
-          const raw = localStorage.getItem("legalindia_clients");
-          if (raw) {
-            const clientsData = JSON.parse(raw);
-            setClients(clientsData);
-          }
-        } catch (localError) {
-          console.error("Error loading clients from localStorage:", localError);
-        }
-        
-        toast({
-          title: "Connection Issue",
-          description: "Could not load clients from server. Showing cached data.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+    try {
+      const raw = localStorage.getItem("legalindia_clients");
+      if (raw) {
+        const clientsData = JSON.parse(raw);
+        setClients(clientsData);
       }
+    } catch (error) {
+      console.error("Error loading clients:", error);
     }
+  }, []);
 
-    fetchClients();
-  }, [toast]);
-
-  // Backup to localStorage (for offline support)
+  // Save clients to localStorage
   useEffect(() => {
     try {
       localStorage.setItem("legalindia_clients", JSON.stringify(clients));
     } catch (error) {
-      console.error("Error saving clients to localStorage:", error);
+      console.error("Error saving clients:", error);
     }
   }, [clients]);
 
-  async function handleCreateClient(c: { name: string; phone?: string }) {
-    try {
-      // Create client via API
-      const newClient = await createClient({
-        name: c.name,
-        phone: c.phone || undefined,
-      });
-      
-      // Add to local state
-      const formattedClient: Client = {
-        id: newClient.client_id,
-        name: newClient.name,
-        phone: newClient.phone || undefined,
-      };
-      
-      setClients((prev) => [formattedClient, ...prev]);
-      setSelectedClientId(formattedClient.id);
-      
-      toast({
-        title: "Client Created",
-        description: `${newClient.name} has been added successfully.`,
-      });
-    } catch (error) {
-      console.error("Error creating client:", error);
-      
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Could not create client",
-        variant: "destructive",
-      });
-    }
+  function handleCreateClient(c: { name: string; phone?: string }) {
+    const newClient: Client = {
+      id: uuidv4(),
+      name: c.name,
+      phone: c.phone
+    };
+    setClients((prev) => [newClient, ...prev]);
+    setSelectedClientId(newClient.id);
   }
 
   function handleSelectClient(clientId: string) {
@@ -151,17 +96,6 @@ function AppPageContent() {
         return <ResearchModule clientId={clientId} onResearchComplete={() => setRefreshTrigger(prev => prev + 1)} />;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading clients...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex relative pt-16 md:pt-[120px]">
