@@ -3,13 +3,14 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { apiFetch, config } from "@/lib/config";
 
-interface ResearchResult {
-  id: string;
-  query: string;
-  result: string;
-  clientId?: string;
-  createdAt: string;
-}
+// Interface for future use
+// interface ResearchResult {
+//   id: string;
+//   query: string;
+//   result: string;
+//   clientId?: string;
+//   createdAt: string;
+// }
 
 export default function ResearchPage() {
   const [query, setQuery] = useState("");
@@ -90,14 +91,14 @@ export default function ResearchPage() {
                 setStreaming(false);
                 break;
               }
-            } catch (e) {
+            } catch {
               // Skip invalid JSON lines
             }
           }
         }
       }
-    } catch (error) {
-      setResult(`Error: ${error}`);
+    } catch (err) {
+      setResult(`Error: ${err instanceof Error ? err.message : 'An error occurred'}`);
       setStreaming(false);
     } finally {
       setLoading(false);
@@ -127,7 +128,7 @@ export default function ResearchPage() {
       } else {
         alert("Failed to save research");
       }
-    } catch (error) {
+    } catch {
       alert("Error saving research");
     } finally {
       setSaving(false);

@@ -20,6 +20,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     fetchResearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const fetchResearch = async () => {
