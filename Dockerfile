@@ -1,24 +1,12 @@
-FROM node:18-alpine
+FROM python:3.9-slim
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies with cache optimization
-RUN npm ci --production=false --frozen-lockfile
-
-# Copy source code
 COPY . .
 
-# Remove frontend directory to avoid conflicts
-RUN rm -rf frontend/
+EXPOSE 8080
 
-# Build the application
-RUN npm run build
-
-# Expose port
-EXPOSE 3000
-
-# Start the application
-CMD ["npm", "start"]
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--bind", "0.0.0.0:8080"]
